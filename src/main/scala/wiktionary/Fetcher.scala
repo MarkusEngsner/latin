@@ -1,5 +1,6 @@
 package wiktionary
 
+import lang._
 import net.ruippeixotog.scalascraper.browser.JsoupBrowser
 import net.ruippeixotog.scalascraper.dsl.DSL._
 import net.ruippeixotog.scalascraper.dsl.DSL.Extract._
@@ -21,6 +22,7 @@ object Fetcher {
   : Vector[Element] = {
     def firstPred(e: Element): Boolean = e.tagName != f"h$level" ||
       e.children.head.attr("id") != name
+
     def secondPred(e: Element): Boolean = e.tagName != f"h$level" ||
       e.children.head.attr("id") == name
 
@@ -44,10 +46,9 @@ object Fetcher {
       val verbs = getVerbs(verbSection, lookupWord)
       verbs
     }
-    catch
-      {
-        case e: HttpStatusException => Vector()
-      }
+    catch {
+      case e: HttpStatusException => Vector()
+    }
   }
 
   def getVerbs(v: Vector[Element], lookupWord: String): Vector[lang.Word] = {
@@ -58,8 +59,43 @@ object Fetcher {
   def spanToConjugation(span: Element, word: String): lang.Word = {
     val props = span.children.toVector map (_.innerHtml)
     val base = span.children.last.children.head.children.head.innerHtml
-    lang.Conjugation(word, props(0), props(1), props(2), props(3), props(4), base)
+    lang.Conjugation(
+      word,
+      ConjugationMapping.person(props(0)),
+      ConjugationMapping.number(props(1)),
+      ConjugationMapping.tense(props(2)),
+      ConjugationMapping.voice(props(3)),
+      ConjugationMapping.mood(props(4)),
+      base
+    )
   }
 
 
 }
+
+object ConjugationMapping {
+  val number: Map[String, Number] = Map("singular" -> Singular, "plural" -> Plural)
+
+  val person: Map[String, Person] = Map("first-person" -> FirstPerson,
+    "second-person" -> SecondPerson,
+    "third-person" -> ThirdPerson
+  )
+
+  val tense: Map[String, Tense] = Map(
+    "present" -> Present,
+    "imperfect" -> Imperfect,
+    "future" -> FutureTense,
+    "perfect" -> Perfect,
+    "pluperfect" -> Pluperfect,
+    "future perfect" -> FuturePerfect
+  )
+
+  val voice: Map[String, Voice] = Map("active" -> Active, "passive" -> Passive)
+
+  val mood: Map[String, Mood] = Map(
+    "indicative" -> Indicative,
+    "subjunctive" -> Subjunctive,
+    "imperative" -> Imperative
+  )
+}
+
