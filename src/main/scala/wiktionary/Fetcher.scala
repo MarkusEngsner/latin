@@ -77,17 +77,17 @@ object ConjugationMapping {
   val number: Map[String, Number] = Map("singular" -> Number.Singular, "plural" ->
     Number.Plural)
 
-  val person: Map[String, Person] = Map("first-person" -> Person.FirstPerson,
-    "second-person" -> Person.SecondPerson,
-    "third-person" -> Person.ThirdPerson
+  val person: Map[String, Person] = Map("first-person" -> Person.First,
+    "second-person" -> Person.Second,
+    "third-person" -> Person.Third
   )
 
   val tense: Map[String, Tense] = Map(
     "present" -> Tense.Present,
     "imperfect" -> Tense.Imperfect,
-    "future" -> Tense.FutureTense,
+    "future" -> Tense.Future,
     "perfect" -> Tense.Perfect,
-    "pluperfect" -> Tense.Pluperfect,
+    "pluperfect" -> Tense.PluPerfect,
     "future perfect" -> Tense.FuturePerfect
   )
 

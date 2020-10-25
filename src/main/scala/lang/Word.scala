@@ -12,6 +12,12 @@ object Number {
 
   final case object Plural extends Number
 
+  val all = Seq(Singular, Plural)
+
+  def fromString(s: String): Number =
+    all.find(_.toString == s).getOrElse(throw new IllegalArgumentException)
+
+
 }
 
 
@@ -19,12 +25,16 @@ sealed trait Person extends Product with Serializable
 
 object Person {
 
-  final case object FirstPerson extends Person
+  final case object First extends Person
 
-  final case object SecondPerson extends Person
+  final case object Second extends Person
 
-  final case object ThirdPerson extends Person
+  final case object Third extends Person
 
+  val all = Seq(First, Second, Third)
+
+  def fromString(s: String): Person =
+    all.find(_.toString == s).getOrElse(throw new IllegalArgumentException)
 }
 
 
@@ -36,13 +46,18 @@ object Tense {
 
   final case object Imperfect extends Tense
 
-  final case object FutureTense extends Tense
+  final case object Future extends Tense
 
   final case object Perfect extends Tense
 
-  final case object Pluperfect extends Tense
+  final case object PluPerfect extends Tense
 
   final case object FuturePerfect extends Tense
+
+  val all = Seq(Present, Imperfect, Future, Perfect, PluPerfect, FuturePerfect)
+
+  def fromString(s: String): Tense =
+    all.find(_.toString == s).getOrElse(throw new IllegalArgumentException)
 
 }
 
@@ -54,6 +69,11 @@ object Voice {
   final case object Active extends Voice
 
   final case object Passive extends Voice
+
+  val all = Seq(Active, Passive)
+
+  def fromString(s: String): Voice =
+    all.find(_.toString == s).getOrElse(throw new IllegalArgumentException)
 
 }
 
@@ -67,6 +87,11 @@ object Mood {
   final case object Subjunctive extends Mood
 
   final case object Imperative extends Mood
+
+  val all = Seq(Indicative, Subjunctive, Imperative)
+
+  def fromString(s: String): Mood =
+    all.find(_.toString == s).getOrElse(throw new IllegalArgumentException)
 
 }
 
