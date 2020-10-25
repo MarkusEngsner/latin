@@ -21,16 +21,27 @@ object Fetcher {
   def getSectionByHeader(in: Vector[Element], name: String, level: Int)
   : Vector[Element] = {
     def firstPred(e: Element): Boolean = e.tagName != f"h$level" ||
-      e.children.head.attr("id") != name
+      !e.children.head.innerHtml.contains(name)
 
     def secondPred(e: Element): Boolean = e.tagName != f"h$level" ||
-      e.children.head.attr("id") == name
+      e.children.head.innerHtml.contains(name)
 
     val cutPreceding = in dropWhile firstPred
     if (cutPreceding.nonEmpty) cutPreceding.tail.takeWhile(secondPred)
     else Vector()
   }
 
+  // splits on elements that DON'T fulfil p, and throws away those elements.
+  def sectionSplit(v: Vector[Element], p: Element => Boolean): Vector[Vector[Element]] = {
+    val (pre, suf) = v span p
+    suf match {
+      case Vector() => Vector(pre)
+      case x +: xs => pre match {
+        case Vector() => sectionSplit(xs, p)
+        case _ => pre +: sectionSplit(xs, p)
+      }
+    }
+  }
 
   def words(lookupWord: String): Vector[lang.Conjugation] = {
     val browser = JsoupBrowser()
@@ -40,11 +51,21 @@ object Fetcher {
       val mainContent = doc >> element("#mw-content-text > .mw-parser-output")
       println(lookupWord)
       val latinSection = getSectionByHeader(mainContent.children.toVector, "Latin", 2)
-      println("checking verb")
-      val verbSection = getSectionByHeader(latinSection, "Verb", 3)
-      println("getSectionByHeader successful")
-      val verbs = getVerbs(verbSection, lookupWord)
-      verbs
+      if (latinSection.count(e => e.tagName == "h3" && e.children.head.innerHtml.contains("Etymology")) > 1)
+        {
+          val etymSections = sectionSplit(latinSection, e => (e.tagName != "h3") || !(e.children.head.innerHtml contains "Etymology"))
+          val verbSections = etymSections.map(getSectionByHeader(_, "Verb", 4))
+          val verbs = verbSections.flatMap(getVerbs(_, lookupWord))
+          verbs
+        }
+      else {
+        val verbSection = getSectionByHeader(latinSection, "Verb", 3)
+        val verbs = getVerbs(verbSection, lookupWord)
+        verbs
+
+      }
+        // split section into multiple etymologies
+        // else  do what we always do
     }
     catch {
       case e: HttpStatusException => Vector()
@@ -52,8 +73,15 @@ object Fetcher {
   }
 
   def getVerbs(v: Vector[Element], lookupWord: String): Vector[lang.Conjugation] = {
-    val defs = v filter (_.tagName == "ol") map (_.children.head.children.head)
-    defs.map(spanToConjugation(_, lookupWord))
+    // if: first element (p) has multiple children: then it is the wikipage with
+    // conjugation table (ie first-person singular active indicative present)
+    if (v.nonEmpty && v.head.children.size > 1)
+      Vector(Conjugation(lookupWord, Person.First, Number.Singular, Tense.Present,
+        Voice.Active, Mood.Indicative, lookupWord))
+    else {
+      val defs = v filter (_.tagName == "ol") map (_.children.head.children.head)
+      defs.map(spanToConjugation(_, lookupWord))
+    }
   }
 
   def spanToConjugation(span: Element, word: String): lang.Conjugation = {
@@ -91,7 +119,8 @@ object ConjugationMapping {
     "future perfect" -> Tense.FuturePerfect
   )
 
-  val voice: Map[String, Voice] = Map("active" -> Voice.Active, "passive" -> Voice.Passive)
+  val voice: Map[String, Voice] = Map("active" -> Voice.Active, "passive" -> Voice
+    .Passive)
 
   val mood: Map[String, Mood] = Map(
     "indicative" -> Mood.Indicative,
