@@ -74,28 +74,29 @@ object Fetcher {
 }
 
 object ConjugationMapping {
-  val number: Map[String, Number] = Map("singular" -> Singular, "plural" -> Plural)
+  val number: Map[String, Number] = Map("singular" -> Number.Singular, "plural" ->
+    Number.Plural)
 
-  val person: Map[String, Person] = Map("first-person" -> FirstPerson,
-    "second-person" -> SecondPerson,
-    "third-person" -> ThirdPerson
+  val person: Map[String, Person] = Map("first-person" -> Person.FirstPerson,
+    "second-person" -> Person.SecondPerson,
+    "third-person" -> Person.ThirdPerson
   )
 
   val tense: Map[String, Tense] = Map(
-    "present" -> Present,
-    "imperfect" -> Imperfect,
-    "future" -> FutureTense,
-    "perfect" -> Perfect,
-    "pluperfect" -> Pluperfect,
-    "future perfect" -> FuturePerfect
+    "present" -> Tense.Present,
+    "imperfect" -> Tense.Imperfect,
+    "future" -> Tense.FutureTense,
+    "perfect" -> Tense.Perfect,
+    "pluperfect" -> Tense.Pluperfect,
+    "future perfect" -> Tense.FuturePerfect
   )
 
-  val voice: Map[String, Voice] = Map("active" -> Active, "passive" -> Passive)
+  val voice: Map[String, Voice] = Map("active" -> Voice.Active, "passive" -> Voice.Passive)
 
   val mood: Map[String, Mood] = Map(
-    "indicative" -> Indicative,
-    "subjunctive" -> Subjunctive,
-    "imperative" -> Imperative
+    "indicative" -> Mood.Indicative,
+    "subjunctive" -> Mood.Subjunctive,
+    "imperative" -> Mood.Imperative
   )
 }
 

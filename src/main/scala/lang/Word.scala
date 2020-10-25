@@ -4,51 +4,71 @@ trait Word {
   val name: String
 }
 
-sealed trait Number
+sealed trait Number extends Product with Serializable
 
-case object Singular extends Number
+object Number {
 
-case object Plural extends Number
+  final case object Singular extends Number
 
+  final case object Plural extends Number
 
-sealed trait Person
-
-case object FirstPerson extends Person
-
-case object SecondPerson extends Person
-
-case object ThirdPerson extends Person
+}
 
 
-sealed trait Tense
+sealed trait Person extends Product with Serializable
 
-case object Present extends Tense
+object Person {
 
-case object Imperfect extends Tense
+  final case object FirstPerson extends Person
 
-case object FutureTense extends Tense
+  final case object SecondPerson extends Person
 
-case object Perfect extends Tense
+  final case object ThirdPerson extends Person
 
-case object Pluperfect extends Tense
-
-case object FuturePerfect extends Tense
+}
 
 
-sealed trait Voice
+sealed trait Tense extends Product with Serializable
 
-case object Active extends Voice
+object Tense {
 
-case object Passive extends Voice
+  final case object Present extends Tense
+
+  final case object Imperfect extends Tense
+
+  final case object FutureTense extends Tense
+
+  final case object Perfect extends Tense
+
+  final case object Pluperfect extends Tense
+
+  final case object FuturePerfect extends Tense
+
+}
 
 
-sealed trait Mood
+sealed trait Voice extends Product with Serializable
 
-case object Indicative extends Mood
+object Voice {
 
-case object Subjunctive extends Mood
+  final case object Active extends Voice
 
-case object Imperative extends Mood
+  final case object Passive extends Voice
+
+}
+
+
+sealed trait Mood extends Product with Serializable
+
+object Mood {
+
+  final case object Indicative extends Mood
+
+  final case object Subjunctive extends Mood
+
+  final case object Imperative extends Mood
+
+}
 
 
 case class Conjugation(override val name: String, person: Person, number: Number,
