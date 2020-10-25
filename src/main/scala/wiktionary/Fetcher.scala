@@ -32,7 +32,7 @@ object Fetcher {
   }
 
 
-  def words(lookupWord: String): Vector[lang.Word] = {
+  def words(lookupWord: String): Vector[lang.Conjugation] = {
     val browser = JsoupBrowser()
     val url = f"$baseurl$lookupWord"
     try {
@@ -51,12 +51,12 @@ object Fetcher {
     }
   }
 
-  def getVerbs(v: Vector[Element], lookupWord: String): Vector[lang.Word] = {
+  def getVerbs(v: Vector[Element], lookupWord: String): Vector[lang.Conjugation] = {
     val defs = v filter (_.tagName == "ol") map (_.children.head.children.head)
     defs.map(spanToConjugation(_, lookupWord))
   }
 
-  def spanToConjugation(span: Element, word: String): lang.Word = {
+  def spanToConjugation(span: Element, word: String): lang.Conjugation = {
     val props = span.children.toVector map (_.innerHtml)
     val base = span.children.last.children.head.children.head.innerHtml
     lang.Conjugation(
