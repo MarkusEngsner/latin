@@ -32,7 +32,8 @@ object Fetcher {
   }
 
   // splits on elements that DON'T fulfil p, and throws away those elements.
-  def sectionSplit(v: Vector[Element], p: Element => Boolean): Vector[Vector[Element]] = {
+  def sectionSplit(v: Vector[Element], p: Element => Boolean)
+  : Vector[Vector[Element]] = {
     val (pre, suf) = v span p
     suf match {
       case Vector() => Vector(pre)
@@ -43,40 +44,42 @@ object Fetcher {
     }
   }
 
-  def words(lookupWord: String): Vector[lang.Conjugation] = {
+  def words(lookupWord: String): Vector[Verb] = {
     val browser = JsoupBrowser()
     val url = f"$baseurl$lookupWord"
     try {
       val doc = browser.get(url)
+      val x = WikiTree.parsePage(doc)
       val mainContent = doc >> element("#mw-content-text > .mw-parser-output")
       println(lookupWord)
       val latinSection = getSectionByHeader(mainContent.children.toVector, "Latin", 2)
-      if (latinSection.count(e => e.tagName == "h3" && e.children.head.innerHtml.contains("Etymology")) > 1)
-        {
-          val etymSections = sectionSplit(latinSection, e => (e.tagName != "h3") || !(e.children.head.innerHtml contains "Etymology"))
-          val verbSections = etymSections.map(getSectionByHeader(_, "Verb", 4))
-          val verbs = verbSections.flatMap(getVerbs(_, lookupWord))
-          verbs
-        }
+      if (latinSection.count(e => e.tagName == "h3" && e.children.head.innerHtml
+        .contains("Etymology")) > 1) {
+        val etymSections = sectionSplit(latinSection, e => (e.tagName != "h3") || !(e
+          .children.head.innerHtml contains "Etymology"))
+        val verbSections = etymSections.map(getSectionByHeader(_, "Verb", 4))
+        val verbs = verbSections.flatMap(getVerbs(_, lookupWord))
+        verbs
+      }
       else {
         val verbSection = getSectionByHeader(latinSection, "Verb", 3)
         val verbs = getVerbs(verbSection, lookupWord)
         verbs
 
       }
-        // split section into multiple etymologies
-        // else  do what we always do
+      // split section into multiple etymologies
+      // else  do what we always do
     }
     catch {
       case e: HttpStatusException => Vector()
     }
   }
 
-  def getVerbs(v: Vector[Element], lookupWord: String): Vector[lang.Conjugation] = {
+  def getVerbs(v: Vector[Element], lookupWord: String): Vector[Verb] = {
     // if: first element (p) has multiple children: then it is the wikipage with
     // conjugation table (ie first-person singular active indicative present)
     if (v.nonEmpty && v.head.children.size > 1)
-      Vector(Conjugation(lookupWord, Person.First, Number.Singular, Tense.Present,
+      Vector(FiniteVerb(lookupWord, Person.First, Number.Singular, Tense.Present,
         Voice.Active, Mood.Indicative, lookupWord))
     else {
       val defs = v filter (_.tagName == "ol") map (_.children.head.children.head)
@@ -84,10 +87,22 @@ object Fetcher {
     }
   }
 
-  def spanToConjugation(span: Element, word: String): lang.Conjugation = {
+  private def isInfinitive(props: Vector[String]): Boolean = {
+    props.exists(_.toLowerCase.contains("infinitive"))
+  }
+
+  //  private def parseInfinitive(name: String, base: String, props: Vector[String])
+  //  : Infinitive = {
+  //    val
+  //
+  //  }
+
+  def spanToConjugation(span: Element, word: String): Verb = {
     val props = span.children.toVector map (_.innerHtml)
     val base = span.children.last.children.head.children.head.innerHtml
-    lang.Conjugation(
+    if (props(1) == "infinitive")
+      Infinitive(word, ConjugationMapping.tense(props(0)), base)
+    else FiniteVerb(
       word,
       ConjugationMapping.person(props(0)),
       ConjugationMapping.number(props(1)),

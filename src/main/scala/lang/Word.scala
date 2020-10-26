@@ -95,8 +95,16 @@ object Mood {
 
 }
 
+sealed trait Verb extends Word
 
-case class Conjugation(override val name: String, person: Person, number: Number,
-                       tense: Tense,
-                       voice: Voice, mood: Mood, base: String) extends Word
+case class FiniteVerb(override val name: String, person: Person, number: Number,
+                      tense: Tense,
+                      voice: Voice, mood: Mood, base: String) extends Verb
 
+
+// need voice too!
+case class Infinitive(override val name: String, tense: Tense, base: String)
+  extends Verb
+
+
+case class PossibleWords(finites: Vector[FiniteVerb], infinitives: Vector[Infinitive])
