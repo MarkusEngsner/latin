@@ -2,9 +2,6 @@ package wiktionary
 
 import lang._
 import net.ruippeixotog.scalascraper.browser.JsoupBrowser
-import net.ruippeixotog.scalascraper.dsl.DSL._
-import net.ruippeixotog.scalascraper.dsl.DSL.Extract._
-import net.ruippeixotog.scalascraper.dsl.DSL.Parse._
 import net.ruippeixotog.scalascraper.model.Element
 import org.jsoup.HttpStatusException
 
@@ -14,61 +11,26 @@ object Fetcher {
 
   val baseurl = "https://en.wiktionary.org/wiki/"
 
-  // in: Vector of elements from which to start
-  // name: header that introduces the section
-  // level: h1, h2, h3... etc which delimits the section
-  // returns: elements between header elements
-  def getSectionByHeader(in: Vector[Element], name: String, level: Int)
-  : Vector[Element] = {
-    def firstPred(e: Element): Boolean = e.tagName != f"h$level" ||
-      !e.children.head.innerHtml.contains(name)
-
-    def secondPred(e: Element): Boolean = e.tagName != f"h$level" ||
-      e.children.head.innerHtml.contains(name)
-
-    val cutPreceding = in dropWhile firstPred
-    if (cutPreceding.nonEmpty) cutPreceding.tail.takeWhile(secondPred)
-    else Vector()
-  }
-
-  // splits on elements that DON'T fulfil p, and throws away those elements.
-  def sectionSplit(v: Vector[Element], p: Element => Boolean)
-  : Vector[Vector[Element]] = {
-    val (pre, suf) = v span p
-    suf match {
-      case Vector() => Vector(pre)
-      case x +: xs => pre match {
-        case Vector() => sectionSplit(xs, p)
-        case _ => pre +: sectionSplit(xs, p)
-      }
-    }
-  }
-
   def words(lookupWord: String): Vector[Verb] = {
     val browser = JsoupBrowser()
     val url = f"$baseurl$lookupWord"
     try {
       val doc = browser.get(url)
-      val x = WikiTree.parsePage(doc)
-      val mainContent = doc >> element("#mw-content-text > .mw-parser-output")
+      val wikiTrees = WikiTree.parsePage(doc)
+      val wikiMap = wikiTrees.map(w => w.header -> w).toMap
       println(lookupWord)
-      val latinSection = getSectionByHeader(mainContent.children.toVector, "Latin", 2)
-      if (latinSection.count(e => e.tagName == "h3" && e.children.head.innerHtml
-        .contains("Etymology")) > 1) {
-        val etymSections = sectionSplit(latinSection, e => (e.tagName != "h3") || !(e
-          .children.head.innerHtml contains "Etymology"))
-        val verbSections = etymSections.map(getSectionByHeader(_, "Verb", 4))
-        val verbs = verbSections.flatMap(getVerbs(_, lookupWord))
-        verbs
-      }
-      else {
-        val verbSection = getSectionByHeader(latinSection, "Verb", 3)
-        val verbs = getVerbs(verbSection, lookupWord)
-        verbs
-
-      }
-      // split section into multiple etymologies
-      // else  do what we always do
+      val latinSection = wikiMap("Latin")
+      val defSection =
+        if (latinSection.children.exists(_.header.contains("Etymology")))
+          for {
+            etymSection <- latinSection.children.filter(_.header.contains("Etymology"))
+            sections <- etymSection.children
+          } yield sections
+        else latinSection.children
+      for {
+        verbSection <- defSection filter (_.header.contains("Verb"))
+        verb <- getVerbs(verbSection.directChildren, lookupWord)
+      } yield verb
     }
     catch {
       case e: HttpStatusException => Vector()
@@ -97,18 +59,25 @@ object Fetcher {
   //
   //  }
 
+  def mapProperty[A](properties: Vector[String], mapping: Map[String, A]): A = {
+    val matches = properties.filter(mapping.contains)
+    if (matches.size == 1) mapping(matches.head)
+    else throw new IllegalArgumentException
+  }
+
   def spanToConjugation(span: Element, word: String): Verb = {
-    val props = span.children.toVector map (_.innerHtml)
+    // all elements except last contain keywords (information about conjugation)
+    val props = span.children.init.toVector map (_.innerHtml)
     val base = span.children.last.children.head.children.head.innerHtml
-    if (props(1) == "infinitive")
-      Infinitive(word, ConjugationMapping.tense(props(0)), base)
+    if (props.contains("infinitive"))
+      Infinitive(word, mapProperty(props, ConjugationMapping.tense), base)
     else FiniteVerb(
       word,
-      ConjugationMapping.person(props(0)),
-      ConjugationMapping.number(props(1)),
-      ConjugationMapping.tense(props(2)),
-      ConjugationMapping.voice(props(3)),
-      ConjugationMapping.mood(props(4)),
+      mapProperty(props, ConjugationMapping.person),
+      mapProperty(props, ConjugationMapping.number),
+      mapProperty(props, ConjugationMapping.tense),
+      mapProperty(props, ConjugationMapping.voice),
+      mapProperty(props, ConjugationMapping.mood),
       base
     )
   }
@@ -142,5 +111,8 @@ object ConjugationMapping {
     "subjunctive" -> Mood.Subjunctive,
     "imperative" -> Mood.Imperative
   )
+
+
+
 }
 

@@ -6,15 +6,9 @@ import net.ruippeixotog.scalascraper.dsl.DSL.Extract._
 import net.ruippeixotog.scalascraper.model.Element
 
 
-abstract class WikiTree(val header: String, val self: Element)
-
-final case class WikiLeaf(override val header: String, override val self: Element,
-                          elements: Vector[Element]) extends WikiTree(header, self)
-
-final case class WikiNode(override val header: String, override val self: Element,
+final case class WikiTree(header: String, self: Element,
                           children: Vector[WikiTree],
-                          directChildElements: Vector[Element])
-  extends WikiTree(header, self)
+                          directChildren: Vector[Element])
 
 
 object WikiTree {
@@ -22,12 +16,12 @@ object WikiTree {
   private def headerFilter(level: Int)(e: Element): Boolean = e.tagName != f"h$level"
 
   // Note: headerLevel of self (same as parseTree)
-  def parseNode(self: Element, v: Vector[Element], headerLevel: Int): WikiNode = {
+  def parseNode(self: Element, v: Vector[Element], headerLevel: Int): WikiTree = {
     val (directContent, childContent) = v span headerFilter(headerLevel + 1)
     val headerText = self.children.head.innerHtml
     val children = if (childContent.isEmpty) Vector()
     else parseTree(childContent, headerLevel + 1)
-    WikiNode(headerText, self, children, directContent)
+    WikiTree(headerText, self, children, directContent)
   }
 
   def parseTree(page: Vector[Element], headerLevel: Int): Vector[WikiTree] = {
@@ -38,6 +32,8 @@ object WikiTree {
       case _ => currentNode +: parseTree(nextContent, headerLevel)
     }
   }
+
+//  def standardizeTree(wikiTree)
 
   // removes everything upto but not including the first language header
   def removePreamble(e: Element): Vector[Element] = {
