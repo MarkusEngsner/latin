@@ -2,9 +2,6 @@ package wiktionary
 
 import lang._
 import net.ruippeixotog.scalascraper.browser.JsoupBrowser
-import net.ruippeixotog.scalascraper.dsl.DSL._
-import net.ruippeixotog.scalascraper.dsl.DSL.Extract._
-import net.ruippeixotog.scalascraper.dsl.DSL.Parse._
 import net.ruippeixotog.scalascraper.model.Element
 import org.jsoup.HttpStatusException
 
@@ -62,18 +59,25 @@ object Fetcher {
   //
   //  }
 
+  def mapProperty[A](properties: Vector[String], mapping: Map[String, A]): A = {
+    val matches = properties.filter(mapping.contains)
+    if (matches.size == 1) mapping(matches.head)
+    else throw new IllegalArgumentException
+  }
+
   def spanToConjugation(span: Element, word: String): Verb = {
-    val props = span.children.toVector map (_.innerHtml)
+    // all elements except last contain keywords (information about conjugation)
+    val props = span.children.init.toVector map (_.innerHtml)
     val base = span.children.last.children.head.children.head.innerHtml
-    if (props(1) == "infinitive")
-      Infinitive(word, ConjugationMapping.tense(props(0)), base)
+    if (props.contains("infinitive"))
+      Infinitive(word, mapProperty(props, ConjugationMapping.tense), base)
     else FiniteVerb(
       word,
-      ConjugationMapping.person(props(0)),
-      ConjugationMapping.number(props(1)),
-      ConjugationMapping.tense(props(2)),
-      ConjugationMapping.voice(props(3)),
-      ConjugationMapping.mood(props(4)),
+      mapProperty(props, ConjugationMapping.person),
+      mapProperty(props, ConjugationMapping.number),
+      mapProperty(props, ConjugationMapping.tense),
+      mapProperty(props, ConjugationMapping.voice),
+      mapProperty(props, ConjugationMapping.mood),
       base
     )
   }
@@ -107,5 +111,8 @@ object ConjugationMapping {
     "subjunctive" -> Mood.Subjunctive,
     "imperative" -> Mood.Imperative
   )
+
+
+
 }
 
