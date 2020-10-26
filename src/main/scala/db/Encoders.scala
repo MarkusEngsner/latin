@@ -13,9 +13,9 @@ object Encoders {
 }
 
 object Decoders {
-  implicit val number = MappedEncoding[String, Number](Number.fromString(_))
-  implicit val person = MappedEncoding[String, Person](Person.fromString(_))
-  implicit val tense =  MappedEncoding[String, Tense](Tense.fromString(_))
-  implicit val voice =  MappedEncoding[String, Voice](Voice.fromString(_))
-  implicit val mood =   MappedEncoding[String, Mood](Mood.fromString(_))
+  implicit val number = MappedEncoding[String, Number](Number.fromString)
+  implicit val person = MappedEncoding[String, Person](Person.fromString)
+  implicit val tense =  MappedEncoding[String, Tense](Tense.fromString)
+  implicit val voice =  MappedEncoding[String, Voice](Voice.fromString)
+  implicit val mood =   MappedEncoding[String, Mood](Mood.fromString)
 }

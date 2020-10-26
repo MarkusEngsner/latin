@@ -5,26 +5,14 @@ import lang._
 import org.postgresql.ds.PGSimpleDataSource
 
 object App {
-  implicit val number = MappedEncoding[Number, String](_.toString)
-  implicit val person = MappedEncoding[Person, String](_.toString)
-  implicit val tense = MappedEncoding[Tense, String](_.toString)
-  implicit val voice = MappedEncoding[Voice, String](_.toString)
-  implicit val mood = MappedEncoding[Mood, String](_.toString)
-
-  implicit val deNumber = MappedEncoding[String, Number](Number.fromString(_))
-  implicit val dePerson = MappedEncoding[String, Person](Person.fromString(_))
-  implicit val deTense =  MappedEncoding[String, Tense](Tense.fromString(_))
-  implicit val deVoice =  MappedEncoding[String, Voice](Voice.fromString(_))
-  implicit val deMood =   MappedEncoding[String, Mood](Mood.fromString(_))
-
   def main(args: Array[String]): Unit = {
 //    val clause = "ira Cupidinis Phoebo amorem dedit"
 //    val clause = "tracta atque comis antistita Phoebi non profectureas tendebat ad aethera palmas"
 //    val clause = "palmas"
-    val clause = "tendebat"
+    val clause = "esse"
     val cache = new cacher.Cache()
     val words = clause.split(' ').toVector map cache.getWord
-    val possiblePredicates = words filter (_.size > 0)
+    val possiblePredicates = words filter (_.nonEmpty)
     println(words)
     println("Possible predicates:")
     if (possiblePredicates.size == 1) println(possiblePredicates.head)
